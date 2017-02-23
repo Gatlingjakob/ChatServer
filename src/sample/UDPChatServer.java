@@ -13,6 +13,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.ArrayList;
 
 /**
  * Created by jakob on 18/02/2017.
@@ -27,7 +28,8 @@ public class UDPChatServer extends Application {
     private static DatagramPacket inPacket, outPacket;
     private static byte[] buffer;
     private static int alive;
-    private static String[] userList; //Platform.runLater()
+     //Platform.runLater()
+
 
 
     // JavaFX
@@ -61,6 +63,7 @@ public class UDPChatServer extends Application {
 
         System.out.println("Opening port... \n");
         try {
+            // Open Port
             datagramSocket = new DatagramSocket(PORT);
         } catch (SocketException sockEx) {
             System.out.println("Unable to open port!");
@@ -70,38 +73,69 @@ public class UDPChatServer extends Application {
 
     }
 
-    private static void handleClient(){
+    // add New User to list of users (kan godt være at denne metode er overflødig)
+    public static ArrayList<String> addUsername (String user, ArrayList<String> list){
+        list.add(user);
+        return list;
+    }
 
+    private static void handleClient(){
+        ArrayList<String> userList = new ArrayList<>();
         try{
+            // Message from Client to Server and message from Server to Client respectively
             String messageIn, messageOut;
+            // Number of sent messages for this Client
             int numMessages = 0;
+            // IP-Address for this Client
             InetAddress clientAddress = null;
+            // Port for this Client
             int clientPort;
             boolean gotUsername = false;
             String username = "blank";
 
+            // If (username hasn't been successfully retrieved yet){}
             if (gotUsername == false) {
+
                 buffer = new byte[256];
+                // Readying ingoing packet with a byte array to store data passed from Client
                 inPacket = new DatagramPacket(buffer, buffer.length);
 
+                //Server receives Packet from Client
                 datagramSocket.receive(inPacket);
 
                 clientAddress = inPacket.getAddress();
 
                 clientPort = inPacket.getPort();
 
+                // Convert data passed from Client to String-type
                 messageIn = new String(inPacket.getData(), 0, inPacket.getLength());
 
+                // set Username for this Client
                 username = messageIn;
-                System.out.println("Username received from [ User "  + username
-                        + " Port: " + clientPort + " IP: " + clientAddress + " ]");
+                addUsername(username, userList);
+
+                // Info about new User printed in the Server Console
+                System.out.println("New user has joined the server! [ User: "  + username
+                        + " Port: " + clientPort + " IP: " + clientAddress + " ] ");
+
+                // Outgoing message to Client
                 messageOut = "New Username: "  + messageIn;
 
+                // "Load" outgoing Packet with specified data
                 outPacket = new DatagramPacket(messageOut.getBytes(), messageOut.length(), clientAddress, clientPort);
 
+                // Send Packet to Client
                 datagramSocket.send(outPacket);
 
+                System.out.println("Users on this Server: " + userList); //iterér igennem userList når
+                // bruger går offline -> find tilsvarende brugernavn og fjern fra listen -->
+                // for each user in userList { if(userList.get(i) == username){ userList.remove(i); }}
+
+                // Username successfully generated
                 gotUsername=true;
+
+
+
             }
 
             do {
